@@ -59,7 +59,15 @@ npm run lint:commits  # Conventional Commits since origin/main
 - Posts are fetched for up to five pages per refresh to protect Buffer's shared
   request quota.
 - Comments and replies are not built. See ADR 0003.
-- The Electron app is not packaged or auto-updated yet.
+- The Electron app is not packaged or auto-updated yet. Releases carry no installers.
+
+## Releasing
+
+Releases are automatic. Each push to `main` runs semantic-release (see
+[ADR 0004](docs/adr/0004-automatic-releases.md)). It creates a GitHub Release
+and tag when a commit is a `feat`, `fix`, `perf` or breaking change. Other commit
+types do not release. To preview the next version locally, run
+`npm run release -- --dry-run --no-ci` with a `GITHUB_TOKEN` set.
 
 ## Commit messages
 
