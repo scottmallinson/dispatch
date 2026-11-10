@@ -5,22 +5,31 @@ files such as `CLAUDE.md` point here so there is a single source of truth.
 
 ## Project overview
 
-<!-- Replace with a 2-3 sentence description of what this project is. -->
+Dispatch is a desktop app for scheduling social posts through Buffer, built to
+sit beside Bureau. It shows a portrait timeline of every post, or one column per
+platform in landscape. The first version publishes only; comments and replies
+wait for Buffer's API (see `docs/adr/0003-buffer-publishing-and-deferred-comments.md`).
 
-Template repository. Replace this section when you start a real project.
+- TypeScript on Node 22.9+, React + Vite for the UI, Electron for the desktop shell.
+- Domain code lives in `src/core/` and must stay free of Node and browser APIs.
+- Publishing services are reached only through `PublishingProvider` in
+  `src/buffer/provider.ts`.
+- The Buffer key lives in the Electron main process. The renderer sees only the
+  preload bridge (`src/renderer/bridge.ts`).
 
 ## Commands
-
-<!-- Keep these accurate; agents rely on them to verify their work. -->
 
 | Task             | Command                |
 | ---------------- | ---------------------- |
 | Install          | `npm install`          |
+| Test             | `npm test`             |
+| Typecheck        | `npm run typecheck`    |
+| Build            | `npm run build`        |
+| Desktop app      | `npm run desktop`      |
+| UI only          | `npm run dev`          |
 | Format           | `npm run format`       |
 | Check formatting | `npm run format:check` |
 | Lint commits     | `npm run lint:commits` |
-
-Add build, test and lint commands for your stack here.
 
 ## Conventions
 
