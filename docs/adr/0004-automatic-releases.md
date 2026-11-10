@@ -30,8 +30,9 @@ and `pull-requests` write permission in that job. The plugin does not comment
 on the PRs it releases. It does not commit back to `main`, so the tag is the only
 version record in git. The version lives in the tag and the release notes.
 
-We will tag the initial template commit `v0.0.0`, so that the first release is
-`v0.1.0` and not `v1.0.0`.
+The first release has no earlier tag to compare against, so semantic-release
+publishes `v1.0.0` from the existing `feat` commits. We accepted that over a
+hand-made baseline tag, which the session's git proxy would not push.
 
 ## Consequences
 
