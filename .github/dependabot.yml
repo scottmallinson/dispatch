@@ -1,0 +1,44 @@
+# Dependabot keeps every dependency manifest in this repository up to date.
+# When you add a stack (e.g. pip, gomod, cargo, docker), add a matching
+# `updates` entry below so its dependencies are covered too. See
+# https://docs.github.com/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+#
+# Minor and patch version updates are grouped into one PR per ecosystem and
+# auto-merged once CI passes (.github/workflows/dependabot-auto-merge.yml).
+# Major updates arrive as separate PRs for a human to review.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        applies-to: version-updates
+        patterns: ['*']
+        update-types: [minor, patch]
+      actions-security:
+        applies-to: security-updates
+        patterns: ['*']
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    versioning-strategy: increase
+    cooldown:
+      default-days: 3
+    commit-message:
+      prefix: build
+    groups:
+      tooling:
+        applies-to: version-updates
+        patterns: ['*']
+        update-types: [minor, patch]
+      tooling-security:
+        applies-to: security-updates
+        patterns: ['*']
