@@ -1,9 +1,9 @@
 name: Release
 
-# Cuts a release on every push to main that has a releasable Conventional
-# Commit: feat (minor), fix and perf (patch), or a breaking change (major).
-# Other commit types do not release. See .releaserc.json and
-# docs/adr/0004-automatic-releases.md.
+# On every push to main, semantic-release cuts a release when a commit is
+# releasable (see .releaserc.json and docs/adr/0004-automatic-releases.md).
+# When it does, the installers for macOS and Windows are built from that tag and
+# attached to the GitHub Release. Pushes that do not release build nothing.
 
 on:
   push:
@@ -24,6 +24,8 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -36,3 +38,47 @@ jobs:
       - run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - id: tag
+        run: echo "tag=$(git tag --points-at HEAD | head -n1)" >> "$GITHUB_OUTPUT"
+
+  installers:
+    name: Installers (${{ matrix.target }})
+    needs: release
+    if: needs.release.outputs.tag != ''
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: mac
+          - os: windows-latest
+            target: win
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ needs.release.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # semantic-release tags the version but does not write it to package.json,
+      # and electron-builder names the files from that field.
+      - run: npm version "${TAG#v}" --no-git-tag-version --allow-same-version
+        shell: bash
+      - run: npm run build
+      - run: npx electron-builder --${{ matrix.target }} --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Attach installers to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          find release -maxdepth 1 \( -name '*.dmg' -o -name '*.exe' \) -print0 \
+            | xargs -0 -r gh release upload "$TAG" --clobber

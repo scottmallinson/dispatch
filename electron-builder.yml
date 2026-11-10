@@ -1,0 +1,23 @@
+# Installers for the release workflow (.github/workflows/release.yml).
+# Builds are unsigned for now: macOS shows a Gatekeeper warning and Windows a
+# SmartScreen warning until signing certificates are added.
+appId: com.scottmallinson.dispatch
+productName: Dispatch
+copyright: Copyright © Scott Mallinson
+directories:
+  output: release
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - package.json
+publish: null
+mac:
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+  category: public.app-category.productivity
+  identity: null
+win:
+  target:
+    - target: nsis
+      arch: [x64]

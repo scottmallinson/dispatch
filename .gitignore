@@ -40,3 +40,6 @@ tmp/
 
 # Electron build output
 dist-electron/
+
+# Installer output
+release/

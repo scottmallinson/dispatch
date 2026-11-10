@@ -38,7 +38,9 @@ hand-made baseline tag, which the session's git proxy would not push.
 
 - Every releasable merge publishes a version straight away. Batch changes into
   one PR if you want them in one release.
-- The app does not yet build or attach installers to a release. That is a follow-up,
-  and it will need its own decision.
-- The version in `package.json` is not updated. Electron builds that need one will
-  have to take it from the tag.
+- When a release is cut, the workflow builds a macOS DMG and a Windows NSIS
+  installer from that tag and attaches them to the release. The builds are
+  unsigned, so macOS and Windows show security warnings until signing certificates
+  are added. The packaging is configured in `electron-builder.yml`.
+- The version in `package.json` is not updated in git. The installer job sets it
+  from the tag before it builds, so the file names match the release.
