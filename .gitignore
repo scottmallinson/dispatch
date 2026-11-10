@@ -37,3 +37,6 @@ tmp/
 
 # Local agent settings
 .claude/settings.local.json
+
+# Electron build output
+dist-electron/

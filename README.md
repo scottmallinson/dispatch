@@ -1,71 +1,69 @@
-# repo-template
+# Dispatch
 
-A language- and platform-agnostic starting point for new projects, built for
-humans and AI coding agents to work in side by side.
+A desktop app for scheduling social posts through [Buffer](https://buffer.com),
+built to sit beside [Bureau](https://github.com/scottmallinson/bureau). It has
+two layouts that switch with the window shape:
 
-## What you get
+- **Portrait:** one consolidated timeline of every scheduled post, soonest first.
+- **Landscape:** one column per connected platform channel.
 
-| Area               | Provided by                                                                                             |
-| ------------------ | ------------------------------------------------------------------------------------------------------- |
-| Commit conventions | [Conventional Commits](https://www.conventionalcommits.org) via [commitlint](https://commitlint.js.org) |
-| Formatting         | [EditorConfig](https://editorconfig.org) + [Prettier](https://prettier.io) for Markdown/YAML/JSON       |
-| Git hooks          | [Husky](https://typicode.github.io/husky) + [lint-staged](https://github.com/lint-staged/lint-staged)   |
-| Secret scanning    | [Gitleaks](https://github.com/gitleaks/gitleaks) in CI                                                  |
-| CI                 | GitHub Actions: PR title/commit lint, format check, secret scan                                         |
-| Dependency updates | Dependabot (GitHub Actions + npm tooling), grouped weekly; minor/patch auto-merged when CI passes       |
-| Collaboration      | Issue forms, PR template, CODEOWNERS, Code of Conduct, Security policy                                  |
-| Agent support      | `AGENTS.md` (+ `CLAUDE.md` pointer) describing how agents should work here                              |
-| Decisions          | Architecture Decision Records in `docs/adr`                                                             |
+Dispatch publishes through Buffer's public GraphQL API. It does not show or
+reply to comments. Buffer's API does not expose them yet (see
+[ADR 0003](docs/adr/0003-buffer-publishing-and-deferred-comments.md)).
 
-The only tooling dependency is Node.js (for commitlint/Prettier/hooks). Your
-project's own code can be in any language; delete `package.json` and friends
-if you'd rather wire up equivalents.
+## Running it
 
-## Using this template
-
-1. Click **Use this template** on GitHub (or clone and remove `.git`).
-2. Replace the placeholders:
-   - `LICENCE.md`: copyright holder and year (or swap the licence).
-   - `.github/CODEOWNERS`: your username/team.
-   - `SECURITY.md` and `CODE_OF_CONDUCT.md`: contact addresses.
-   - `package.json`: `name`, `description`, `repository`.
-   - This README.
-3. Install the tooling and hooks:
-
-   ```sh
-   npm install
-   ```
-
-4. Enable branch protection on `main`: require PRs, require the `CI` checks,
-   require linear history (squash merge recommended).
-5. In **Settings → General**, enable **Allow auto-merge** so minor and patch
-   Dependabot PRs merge once CI passes. This relies on the required checks
-   from step 4. If you also require approving reviews, Dependabot PRs will
-   wait for one (see [ADR 0002](docs/adr/0002-auto-merge-dependabot-updates.md)).
-
-## Everyday commands
+Dispatch needs a Buffer API key and the id of your Buffer organization. Both
+are read from the environment, and the key stays in the Electron main process.
 
 ```sh
-npm run format        # format everything
-npm run format:check  # verify formatting (what CI runs)
-npm run lint:commits  # lint commits since origin/main
+npm install
+export BUFFER_API_KEY=...            # from Buffer's API settings
+export BUFFER_ORGANIZATION_ID=...    # your organization id
+npm run desktop                      # build, then launch the Electron app
 ```
+
+Without both variables the app opens, says Buffer is not configured, and makes
+no requests. For UI work without Electron, run `npm run dev` and open the
+printed URL. There is no bridge in a browser, so the page explains that the
+desktop app is needed.
+
+## Layout of the code
+
+| Path            | What lives there                                                              |
+| --------------- | ----------------------------------------------------------------------------- |
+| `src/core/`     | Pure domain code: types, timeline grouping, layout choice, input validation   |
+| `src/buffer/`   | Buffer GraphQL client, operations and the `PublishingProvider` implementation |
+| `src/renderer/` | React UI: composer, portrait timeline, landscape columns                      |
+| `electron/`     | Main process (holds the key, registers IPC) and the sandboxed preload bridge  |
+| `scripts/`      | Build helper that marks `dist-electron/` as CommonJS                          |
+
+The renderer never talks to Buffer. It calls `window.dispatch`, which the
+preload script exposes, and the main process makes the request.
+
+## Commands
+
+```sh
+npm test              # unit tests (Vitest)
+npm run typecheck     # renderer and Electron TypeScript
+npm run build         # typecheck, compile Electron code, build the renderer
+npm run format:check  # Prettier, as CI runs it
+npm run lint:commits  # Conventional Commits since origin/main
+```
+
+## Known limits
+
+- The Buffer operations follow Buffer's public guides. Buffer's docs do not
+  publish the full schema, so check the queries against a live key before you
+  rely on them. The first real run is the test.
+- Posts are fetched for up to five pages per refresh to protect Buffer's shared
+  request quota.
+- Comments and replies are not built. See ADR 0003.
+- The Electron app is not packaged or auto-updated yet.
 
 ## Commit messages
 
-Format: `type(optional-scope): description`, e.g. `feat(api): add pagination`.
-Allowed types: `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`,
-`refactor`, `revert`, `style`, `test`. See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Repository layout
-
-```
-.github/        CI workflows, issue/PR templates, CODEOWNERS, Dependabot
-.husky/         Git hooks (commit-msg, pre-commit)
-docs/adr/       Architecture Decision Records
-AGENTS.md       Instructions for AI coding agents
-CONTRIBUTING.md How to contribute
-```
+Format: `type(optional-scope): description`. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licence
 
