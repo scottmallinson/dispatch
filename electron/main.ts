@@ -7,6 +7,7 @@ import { COMPOSE_SCHEME, parseComposeLink, type ComposeRequest } from '../src/co
 import { validateNewPost } from '../src/core/validate';
 import { BRIDGE_CHANNELS, type BufferSettingsView } from '../src/renderer/bridge';
 import { activeConfig, secureStorageAvailable, settingsStore } from './settings';
+import { registerUpdateIpc, startUpdates } from './updates';
 
 /**
  * A compose link (from Bureau, or the browser) that the window has not taken yet.
@@ -205,6 +206,8 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(() => {
     setMenu();
     registerIpc();
+    registerUpdateIpc();
+    startUpdates();
     createWindow();
 
     app.on('activate', () => {

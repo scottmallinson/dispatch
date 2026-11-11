@@ -27,6 +27,7 @@
     "*": "prettier --write --ignore-unknown"
   },
   "dependencies": {
+    "electron-updater": "^6.8.11",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

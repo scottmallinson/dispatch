@@ -1,4 +1,5 @@
 import type { ComposeRequest } from '../core/compose-link';
+import type { UpdateState } from '../core/updates';
 import type { Channel, NewPost, Post } from '../core/types';
 
 /** What the renderer may know about the Buffer connection. The key itself never leaves the main process. */
@@ -18,10 +19,19 @@ export interface BufferSettingsInput {
   organizationId: string;
 }
 
+/** Update controls from the main process. Updates come from GitHub Releases; see electron/updates.ts. */
+export interface UpdatesBridge {
+  state(): Promise<UpdateState>;
+  check(): Promise<UpdateState>;
+  install(): Promise<void>;
+  onChange(listener: (state: UpdateState) => void): () => void;
+}
+
 /** The API the preload script exposes to the renderer as `window.dispatch`. */
 export interface DispatchBridge {
   /** The OS the desktop app runs on, e.g. "darwin". The top bar makes room for macOS's window controls. */
   readonly platform: string;
+  readonly updates: UpdatesBridge;
   getSettings(): Promise<BufferSettingsView>;
   saveSettings(input: BufferSettingsInput): Promise<BufferSettingsView>;
   clearSettings(): Promise<BufferSettingsView>;
@@ -43,4 +53,8 @@ export const BRIDGE_CHANNELS = {
   schedule: 'dispatch:schedule',
   composeTake: 'dispatch:compose:take',
   composeChanged: 'dispatch:compose:changed',
+  updatesState: 'dispatch:updates:state',
+  updatesCheck: 'dispatch:updates:check',
+  updatesInstall: 'dispatch:updates:install',
+  updatesChanged: 'dispatch:updates:changed',
 } as const;

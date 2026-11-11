@@ -73,7 +73,9 @@ npm run lint:commits  # Conventional Commits since origin/main
 - Posts are fetched for up to five pages per refresh to protect Buffer's shared
   request quota.
 - Comments and replies are not built. See ADR 0003.
-- Installers are unsigned, so macOS and Windows show security warnings. Auto-update is not built.
+- Installers are unsigned, so macOS and Windows show security warnings. Updates
+  install on Windows. macOS only installs updates into a signed app, so they
+  wait on signing (see [ADR 0008](docs/adr/0008-app-updates-from-github-releases.md)).
 
 ## Releasing
 
@@ -84,6 +86,10 @@ types do not release. A new release also gets a macOS DMG and a Windows installe
 built from the tag and attached by the workflow. To build them locally, run
 `npm run package` on the target platform. To preview the next version locally, run
 `npm run release -- --dry-run --no-ci` with a `GITHUB_TOKEN` set.
+
+Installed copies check for a newer release when they start and every six hours,
+and download it in the background. It installs when Dispatch quits, or at once
+from Settings > Updates. Updates use electron-updater, as in Bureau.
 
 ## Commit messages
 

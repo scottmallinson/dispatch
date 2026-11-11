@@ -20,11 +20,19 @@ protocols:
   - name: Dispatch
     schemes:
       - dispatch
-publish: null
+# Where installed apps look for updates. The workflow publishes the update
+# metadata (latest*.yml, the zip and the blockmaps) into the GitHub Release.
+publish:
+  provider: github
+  owner: scottmallinson
+  repo: dispatch
 mac:
   target:
     - target: dmg
-      arch: [arm64, x64]
+      arch: universal
+    # Updates on macOS install from the zip, not the dmg.
+    - target: zip
+      arch: universal
   category: public.app-category.productivity
   identity: null
 win:

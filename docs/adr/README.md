@@ -10,3 +10,4 @@ new one. Copy [`0000-template.md`](0000-template.md) to start.
 | [0002](0002-auto-merge-dependabot-updates.md)          | Auto-merge Dependabot updates          | Accepted |
 | [0006](0006-adopt-the-bureau-design-system.md)         | Adopt the Bureau design system         | Accepted |
 | [0007](0007-open-the-composer-from-a-dispatch-link.md) | Open the composer from a dispatch link | Proposed |
+| [0008](0008-app-updates-from-github-releases.md)       | Update the app from GitHub Releases    | Proposed |
