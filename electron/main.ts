@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, net, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, nativeTheme, net, shell } from 'electron';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createBufferProvider, type PublishingProvider } from '../src/buffer/provider';
@@ -80,11 +80,25 @@ function setMenu(): void {
   }
 }
 
+/** The design system's page ground (surface-page) in Daylight and Lamplight. */
+function pageGround(): string {
+  return nativeTheme.shouldUseDarkColors ? '#14120f' : '#f0ece1';
+}
+
 function createWindow(): void {
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
+    minWidth: 420,
+    minHeight: 560,
     title: 'Dispatch',
+    // The page ground, so the window never flashes white before the UI paints.
+    backgroundColor: pageGround(),
+    // macOS hides the title bar and the app's own top bar absorbs the
+    // traffic-light inset, as in Bureau.
+    ...(process.platform === 'darwin'
+      ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 16, y: 18 } }
+      : {}),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -92,6 +106,10 @@ function createWindow(): void {
       sandbox: true,
     },
   });
+
+  const followTheme = () => window.setBackgroundColor(pageGround());
+  nativeTheme.on('updated', followTheme);
+  window.on('closed', () => nativeTheme.off('updated', followTheme));
 
   // Links open in the user's browser, never in a new Dispatch window.
   window.webContents.setWindowOpenHandler(({ url }) => {

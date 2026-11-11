@@ -4,8 +4,18 @@ A desktop app for scheduling social posts through [Buffer](https://buffer.com),
 built to sit beside [Bureau](https://github.com/scottmallinson/bureau). It has
 two layouts that switch with the window shape:
 
-- **Portrait:** one consolidated timeline of every scheduled post, soonest first.
-- **Landscape:** one column per connected platform channel.
+- **Portrait:** one consolidated timeline of every post, newest first. Posts
+  queued for the next free slot sit at the top.
+- **Landscape:** one column per connected platform channel, each newest first,
+  with the composer in a side panel.
+
+Write a post once and pick as many channels as you like. Dispatch sends one
+post to each channel in turn. If Buffer refuses one, the others still go, and
+the composer keeps the post with the refused channels selected so you can try
+again.
+
+Dispatch wears Bureau's design system, so the two apps read as a pair. See
+[ADR 0006](docs/adr/0006-adopt-the-bureau-design-system.md).
 
 Dispatch publishes through Buffer's public GraphQL API. It does not show or
 reply to comments. Buffer's API does not expose them yet (see
@@ -33,13 +43,14 @@ is no bridge in a browser, so the page explains that the desktop app is needed.
 
 ## Layout of the code
 
-| Path            | What lives there                                                              |
-| --------------- | ----------------------------------------------------------------------------- |
-| `src/core/`     | Pure domain code: types, timeline grouping, layout choice, input validation   |
-| `src/buffer/`   | Buffer GraphQL client, operations and the `PublishingProvider` implementation |
-| `src/renderer/` | React UI: composer, portrait timeline, landscape columns                      |
-| `electron/`     | Main process (holds the key, registers IPC) and the sandboxed preload bridge  |
-| `scripts/`      | Build helper that marks `dist-electron/` as CommonJS                          |
+| Path               | What lives there                                                              |
+| ------------------ | ----------------------------------------------------------------------------- |
+| `src/core/`        | Pure domain code: types, timeline grouping, layout choice, input validation   |
+| `src/buffer/`      | Buffer GraphQL client, operations and the `PublishingProvider` implementation |
+| `src/renderer/`    | React UI: composer, portrait timeline, landscape columns, design tokens       |
+| `electron/`        | Main process (holds the key, registers IPC) and the sandboxed preload bridge  |
+| `scripts/`         | Build helper that marks `dist-electron/` as CommonJS                          |
+| `build-resources/` | App icon for the installers (`icon.png`, drawn from `icon.svg`)               |
 
 The renderer never talks to Buffer. It calls `window.dispatch`, which the
 preload script exposes, and the main process makes the request.

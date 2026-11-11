@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateNewPost } from './validate';
+import { validateNewPost, validatePostDraft } from './validate';
 
 const future = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
@@ -34,5 +34,42 @@ describe('validateNewPost', () => {
       error: 'The publish time must be in the future.',
     });
     expect(validateNewPost(null)).toMatchObject({ ok: false });
+  });
+});
+
+describe('validatePostDraft', () => {
+  it('splits a draft into one post per channel, dropping duplicates and blanks', () => {
+    expect(
+      validatePostDraft({ channelIds: ['bsky', ' masto ', 'bsky', ''], text: 'Hi', dueAt: null }),
+    ).toEqual({
+      ok: true,
+      value: [
+        { channelId: 'bsky', text: 'Hi', dueAt: null },
+        { channelId: 'masto', text: 'Hi', dueAt: null },
+      ],
+    });
+  });
+
+  it('gives every post the same normalised publish time', () => {
+    const result = validatePostDraft({ channelIds: ['a', 'b'], text: 'Hi', dueAt: future });
+    expect(result.ok && result.value.map((p) => p.dueAt)).toEqual([
+      new Date(future).toISOString(),
+      new Date(future).toISOString(),
+    ]);
+  });
+
+  it('asks for a channel when none is chosen', () => {
+    const error = { ok: false, error: 'Choose at least one channel.' };
+    expect(validatePostDraft({ channelIds: [], text: 'Hi', dueAt: null })).toEqual(error);
+    expect(validatePostDraft({ channelIds: ['  '], text: 'Hi', dueAt: null })).toEqual(error);
+    expect(validatePostDraft({ channelIds: 'bsky', text: 'Hi', dueAt: null })).toEqual(error);
+  });
+
+  it('passes on the first problem with the post itself', () => {
+    expect(validatePostDraft({ channelIds: ['a', 'b'], text: ' ', dueAt: null })).toEqual({
+      ok: false,
+      error: 'Write something to post.',
+    });
+    expect(validatePostDraft(null)).toMatchObject({ ok: false });
   });
 });

@@ -18,18 +18,23 @@ const channels: Channel[] = [
 ];
 
 describe('consolidatedTimeline', () => {
-  it('orders posts by due time across channels and puts unscheduled posts last', () => {
+  it('puts the newest post first, with posts queued without a time above them all', () => {
     const posts = [
       post('late', 'masto', '2026-11-12T09:00:00.000Z'),
       post('queued', 'bsky', null),
       post('early', 'bsky', '2026-11-10T09:00:00.000Z'),
     ];
-    expect(consolidatedTimeline(posts).map((p) => p.id)).toEqual(['early', 'late', 'queued']);
+    expect(consolidatedTimeline(posts).map((p) => p.id)).toEqual(['queued', 'late', 'early']);
   });
 
-  it('keeps the original order for unscheduled posts', () => {
-    const posts = [post('a', 'bsky', null), post('b', 'masto', null)];
-    expect(consolidatedTimeline(posts).map((p) => p.id)).toEqual(['a', 'b']);
+  it('keeps the original order for unscheduled posts and for posts due at the same time', () => {
+    const posts = [
+      post('a', 'bsky', null),
+      post('b', 'masto', null),
+      post('c', 'bsky', '2026-11-10T09:00:00.000Z'),
+      post('d', 'masto', '2026-11-10T09:00:00.000Z'),
+    ];
+    expect(consolidatedTimeline(posts).map((p) => p.id)).toEqual(['a', 'b', 'c', 'd']);
   });
 
   it('does not mutate its input', () => {
@@ -51,12 +56,12 @@ describe('columnsByChannel', () => {
     expect(columns[2].posts).toEqual([]);
   });
 
-  it('sorts posts within each column by due time', () => {
+  it('sorts posts within each column newest first', () => {
     const columns = columnsByChannel(channels, [
-      post('later', 'bsky', '2026-11-12T09:00:00.000Z'),
       post('sooner', 'bsky', '2026-11-10T09:00:00.000Z'),
+      post('later', 'bsky', '2026-11-12T09:00:00.000Z'),
     ]);
-    expect(columns[0].posts.map((p) => p.id)).toEqual(['sooner', 'later']);
+    expect(columns[0].posts.map((p) => p.id)).toEqual(['later', 'sooner']);
   });
 
   it('adds a column for posts on a channel it does not know', () => {

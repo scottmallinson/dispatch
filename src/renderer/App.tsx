@@ -1,23 +1,49 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Channel, NewPost, Post } from '../core/types';
 import type { BufferSettingsView } from './bridge';
 import { cleanErrorMessage } from './format';
 import { Composer } from './Composer';
 import { Timeline } from './Timeline';
 import { Columns } from './Columns';
-import { Onboarding, SettingsPanel } from './Connect';
+import { Onboarding, SettingsPanel, Setup } from './Connect';
 import { useOrientation } from './useOrientation';
+import { Brand } from './brand';
+import { channelLabels } from '../core/platforms';
+
+const TABS = [
+  { id: 'posts', label: 'Posts' },
+  { id: 'settings', label: 'Settings' },
+] as const;
+
+type Tab = (typeof TABS)[number]['id'];
+
+function tabFromHash(): Tab {
+  const hash = window.location.hash.replace('#', '');
+  return TABS.some((t) => t.id === hash) ? (hash as Tab) : 'posts';
+}
+
+/** The section in the URL hash, as in Bureau, so the tabs are plain links. */
+function useTab(): Tab {
+  const [tab, setTab] = useState<Tab>(tabFromHash);
+  useEffect(() => {
+    const onHash = () => setTab(tabFromHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  return tab;
+}
 
 export function App() {
   const orientation = useOrientation();
   const bridge = window.dispatch;
   const [settings, setSettings] = useState<BufferSettingsView | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
+  const tab = useTab();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const configured = settings?.configured ?? false;
+  const labels = useMemo(() => channelLabels(channels), [channels]);
 
   useEffect(() => {
     if (!bridge) return;
@@ -55,61 +81,90 @@ export function App() {
 
   async function schedule(post: NewPost) {
     if (!bridge) throw new Error('Dispatch is not running inside the desktop app.');
-    await bridge.schedulePost(post);
-    await refresh();
+    try {
+      await bridge.schedulePost(post);
+    } catch (err) {
+      throw new Error(cleanErrorMessage(err, 'Buffer refused the post.'));
+    }
   }
 
   if (!bridge) {
     return (
-      <main className="setup">
+      <Setup>
         <p>Open Dispatch in the desktop app to load Buffer data.</p>
-      </main>
+      </Setup>
     );
   }
   if (settings === null) {
     return (
-      <main className="setup">
-        <p>{error ?? 'Loading…'}</p>
-      </main>
+      <Setup>
+        <p className={error ? 'notice notice-error' : 'muted'} role={error ? 'alert' : undefined}>
+          {error ?? 'Loading…'}
+        </p>
+      </Setup>
     );
   }
   if (!configured) {
     return <Onboarding settings={settings} onConnected={handleSettingsChange} />;
   }
-  if (showSettings) {
-    return (
-      <SettingsPanel
-        settings={settings}
-        onChange={handleSettingsChange}
-        onClose={() => setShowSettings(false)}
-      />
-    );
-  }
 
   return (
-    <main className={`app ${orientation}`}>
-      <header>
-        <h1>Dispatch</h1>
-        <div className="header-actions">
-          <button type="button" className="secondary" onClick={() => setShowSettings(true)}>
-            Settings
-          </button>
-          <button type="button" onClick={() => void refresh()} disabled={loading}>
-            {loading ? 'Loading…' : 'Refresh'}
+    <div className={`app ${orientation}`}>
+      <header className="topbar">
+        <Brand />
+        <nav className="tabs" aria-label="Sections">
+          {TABS.map((t) => (
+            <a key={t.id} href={`#${t.id}`} aria-current={tab === t.id ? 'page' : undefined}>
+              {t.label}
+            </a>
+          ))}
+        </nav>
+        <div className="sources">
+          <span className={`source-badge ${error ? 'error' : 'live'}`} title={error ?? 'Connected'}>
+            Buffer
+          </span>
+          <button
+            type="button"
+            className="icon-button"
+            onClick={() => void refresh()}
+            disabled={loading}
+            aria-label="Reload"
+            title="Reload"
+          >
+            ↻
           </button>
         </div>
       </header>
-      {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      )}
-      <Composer channels={channels} onSchedule={schedule} />
-      {orientation === 'portrait' ? (
-        <Timeline posts={posts} channels={channels} />
+      {tab === 'settings' ? (
+        <SettingsPanel
+          settings={settings}
+          onChange={handleSettingsChange}
+          onClose={() => (window.location.hash = 'posts')}
+        />
       ) : (
-        <Columns posts={posts} channels={channels} />
+        <main className="workspace">
+          <aside className="composer-pane">
+            <Composer
+              channels={channels}
+              labels={labels}
+              onSchedule={schedule}
+              onScheduled={refresh}
+            />
+          </aside>
+          <div className="posts-pane">
+            {error && (
+              <p className="notice notice-error" role="alert">
+                {error}
+              </p>
+            )}
+            {orientation === 'portrait' ? (
+              <Timeline posts={posts} channels={channels} />
+            ) : (
+              <Columns posts={posts} channels={channels} />
+            )}
+          </div>
+        </main>
       )}
-    </main>
+    </div>
   );
 }

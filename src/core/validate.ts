@@ -32,3 +32,29 @@ export function validateNewPost(input: unknown): ValidationResult {
     },
   };
 }
+
+export type DraftValidationResult = { ok: true; value: NewPost[] } | { ok: false; error: string };
+
+/**
+ * Checks a composer submission that targets one or more channels, and splits it
+ * into one post per channel. Duplicate channel ids are sent once.
+ */
+export function validatePostDraft(input: unknown): DraftValidationResult {
+  if (typeof input !== 'object' || input === null)
+    return { ok: false, error: 'Post must be an object.' };
+  const { channelIds, text, dueAt } = input as Record<string, unknown>;
+
+  if (!Array.isArray(channelIds) || !channelIds.every((id) => typeof id === 'string')) {
+    return { ok: false, error: 'Choose at least one channel.' };
+  }
+  const unique = [...new Set(channelIds.map((id) => id.trim()).filter((id) => id !== ''))];
+  if (unique.length === 0) return { ok: false, error: 'Choose at least one channel.' };
+
+  const posts: NewPost[] = [];
+  for (const channelId of unique) {
+    const result = validateNewPost({ channelId, text, dueAt });
+    if (!result.ok) return result;
+    posts.push(result.value);
+  }
+  return { ok: true, value: posts };
+}

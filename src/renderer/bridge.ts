@@ -19,6 +19,8 @@ export interface BufferSettingsInput {
 
 /** The API the preload script exposes to the renderer as `window.dispatch`. */
 export interface DispatchBridge {
+  /** The OS the desktop app runs on, e.g. "darwin". The top bar makes room for macOS's window controls. */
+  readonly platform: string;
   getSettings(): Promise<BufferSettingsView>;
   saveSettings(input: BufferSettingsInput): Promise<BufferSettingsView>;
   clearSettings(): Promise<BufferSettingsView>;

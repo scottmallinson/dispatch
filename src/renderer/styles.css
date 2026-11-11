@@ -1,229 +1,959 @@
-:root {
-  color-scheme: light dark;
-  --bg: #fbfaf7;
-  --fg: #1d1c1a;
-  --muted: #6b6862;
-  --line: #d9d5cc;
-  --accent: #2b5fd9;
-  --danger: #b3261e;
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
+@import './tokens.css';
+
+/*
+ * Dispatch wears the Bureau design system: paper, ink, hairline rules and one
+ * red accent. Every value below is a token from tokens.css; add no colour here
+ * that the system does not have. Where Bureau's app already solved a pattern
+ * (top bar, buttons, badges, segmented control), this file follows it.
+ */
+
+/* Self-hosted so the app owes nothing to a CDN and works offline. Both are
+   variable fonts: one file covers every weight the system uses. */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  src: url('./fonts/hanken-grotesk-latin.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --bg: #161514;
-    --fg: #ece9e2;
-    --muted: #9b968c;
-    --line: #3a3834;
-    --accent: #7aa2ff;
-    --danger: #ff8a80;
-  }
+@font-face {
+  font-family: 'Azeret Mono';
+  src: url('./fonts/azeret-mono-latin.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
 }
 
 body {
+  background: var(--surface-page);
+  color: var(--ink);
+  font: 400 15px/23px var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+  caret-color: var(--accent);
+  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-width: thin;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border: 3px solid transparent;
+  border-radius: var(--radius-pill);
+  background-clip: content-box;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+
+code {
+  font: 400 12.5px/18px var(--font-mono);
+}
+
+h1,
+h2,
+p {
   margin: 0;
-  background: var(--bg);
-  color: var(--fg);
 }
 
-main {
-  padding: 1rem;
-  max-width: 72rem;
-  margin: 0 auto;
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
-h1 {
-  font-size: 1.5rem;
-  margin: 0.5rem 0;
+.muted {
+  color: var(--ink-muted);
 }
 
-h2 {
-  font-size: 1rem;
-  margin: 0 0 0.5rem;
+.small {
+  font-size: 13px;
+  line-height: 20px;
 }
 
-.service {
-  color: var(--muted);
-  font-weight: normal;
-  font-size: 0.85rem;
+/* Controls */
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
 }
 
 button {
-  font: inherit;
-  padding: 0.4rem 0.9rem;
-  border: 1px solid var(--accent);
-  background: var(--accent);
-  color: #fff;
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--size-control-md);
+  padding: 0 var(--space-4);
+  border: var(--size-hairline) solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
   cursor: pointer;
 }
 
+button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+/* Disabled is ink-faint with no fill change, and stays focusable. */
 button:disabled {
-  opacity: 0.5;
+  color: var(--ink-faint);
+  border-color: var(--line);
+  background: transparent;
   cursor: default;
 }
 
-textarea,
-select,
-input[type='datetime-local'] {
-  font: inherit;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 0.4rem;
-  background: var(--bg);
-  color: var(--fg);
-  border: 1px solid var(--line);
-  border-radius: 6px;
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
 }
 
-.composer {
-  display: grid;
-  gap: 0.75rem;
-  margin: 1rem 0 1.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--line);
+button.primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
 }
 
-.composer fieldset {
-  border: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.4rem;
-}
-
-.composer legend {
-  color: var(--muted);
-  padding: 0;
-  margin-bottom: 0.25rem;
-}
-
-.composer label {
-  display: grid;
-  gap: 0.25rem;
-}
-
-.composer fieldset label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.composer fieldset input[type='datetime-local'] {
-  width: auto;
-}
-
-.error {
-  color: var(--danger);
-}
-
-.empty,
-.status,
-.channel,
-time {
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.post {
-  border-top: 1px solid var(--line);
-  padding: 0.6rem 0;
-}
-
-.post p {
-  margin: 0.25rem 0;
-  white-space: pre-wrap;
-}
-
-.post time,
-.post .channel,
-.post .status {
-  display: block;
-}
-
-/* Portrait: one consolidated timeline. */
-.timeline {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-/* Landscape: one column per platform. */
-.columns {
-  display: grid;
-  gap: 1rem;
-  overflow-x: auto;
-}
-
-.column ol {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-@media (max-width: 480px) {
-  main {
-    padding: 0.75rem;
-  }
-}
-
-.header-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-button.secondary {
+button.primary:disabled {
   background: transparent;
-  color: var(--accent);
+  border-color: var(--line);
+  color: var(--ink-faint);
 }
 
 button.danger {
-  border-color: var(--danger);
   color: var(--danger);
-  margin-top: 1rem;
+}
+
+button.danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+}
+
+.link-button {
+  min-height: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.link-button:hover:not(:disabled) {
+  background: none;
+  text-decoration: underline;
+}
+
+.text-input,
+textarea,
+.time-input {
+  width: 100%;
+  min-height: var(--size-control-md);
+  padding: 0 var(--space-3);
+  background: var(--surface-card);
+  border: var(--size-hairline) solid var(--line-strong);
+  border-radius: var(--radius-md);
+}
+
+textarea {
+  padding: var(--space-2) var(--space-3);
+  resize: vertical;
+  min-height: 96px;
+}
+
+.text-input::placeholder,
+textarea::placeholder {
+  color: var(--ink-faint);
+}
+
+/* Every clock time is mono, so digits stack and compare. */
+.time-input {
+  width: auto;
+  font: 500 13px/16px var(--font-mono);
+  letter-spacing: 0.01em;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.field-label {
+  padding: 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 700;
+}
+
+.field-hint {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+/* A segmented choice, as in Bureau's toolbar. Radios underneath, so arrow keys work. */
+.segmented {
+  display: inline-flex;
+}
+
+.segmented label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-control-md);
+  padding: 0 var(--space-3);
+  margin-left: -1px;
+  border: var(--size-hairline) solid var(--line-strong);
+  background: var(--surface-card);
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.segmented label:first-child {
+  margin-left: 0;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.segmented label:last-child {
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.segmented label:hover {
+  background: var(--surface-hover);
+}
+
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segmented label:has(input:checked) {
+  z-index: 1;
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.segmented label:has(input:focus-visible) {
+  z-index: 2;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Badges: a word with a dot. The word carries the meaning. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 20px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+  flex: none;
+}
+
+.badge-neutral {
+  background: var(--cat-0-soft);
+  color: var(--ink);
+}
+
+.badge-accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.badge-ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.badge-warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.badge-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* A platform's two-letter mark in its slot. The slot follows the platform. */
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 22px;
+  height: 18px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.slot-0 {
+  background: var(--cat-0-soft);
+  color: var(--cat-0);
+}
+.slot-1 {
+  background: var(--cat-1-soft);
+  color: var(--cat-1);
+}
+.slot-2 {
+  background: var(--cat-2-soft);
+  color: var(--cat-2);
+}
+.slot-3 {
+  background: var(--cat-3-soft);
+  color: var(--cat-3);
+}
+.slot-4 {
+  background: var(--cat-4-soft);
+  color: var(--cat-4);
+}
+.slot-5 {
+  background: var(--cat-5-soft);
+  color: var(--cat-5);
+}
+.slot-6 {
+  background: var(--cat-6-soft);
+  color: var(--cat-6);
+}
+.slot-7 {
+  background: var(--cat-7-soft);
+  color: var(--cat-7);
+}
+.slot-8 {
+  background: var(--cat-8-soft);
+  color: var(--cat-8);
+}
+
+/* Notices: a fact in a tinted band. */
+
+.notice {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.notice-ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.notice-error {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* Shell */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  height: 52px;
+  padding: 0 var(--space-4);
+  background: var(--surface-card);
+  border-bottom: var(--size-hairline) solid var(--line);
+  flex: none;
+}
+
+/* In the desktop window the title bar is hidden on macOS, so the top bar is
+   the drag handle and leaves room for the traffic lights. Controls stay clickable. */
+[data-desktop] .topbar {
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+[data-desktop] .topbar a,
+[data-desktop] .topbar button {
+  -webkit-app-region: no-drag;
+}
+
+[data-desktop='darwin'] .topbar {
+  padding-left: 88px;
+}
+
+/* The top bar is Bureau's: wordmark, section tabs, then the source and reload. */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  height: 100%;
+}
+
+.tabs a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--space-3);
+  color: var(--ink-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.tabs a[aria-current='page'] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+  font-weight: 700;
+}
+
+.sources {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.source-badge {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  padding: 2px var(--space-2);
+  border: var(--size-hairline) solid var(--line);
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-muted);
+}
+
+.source-badge.live {
+  background: var(--ok-soft);
+  color: var(--ok);
+  border-color: transparent;
+}
+
+.source-badge.error {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: transparent;
+}
+
+.icon-button {
+  min-height: 0;
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* Portrait: the composer sits above one timeline. */
+.workspace {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+.posts-pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* Landscape: the composer is a side panel and the columns take the rest. */
+.landscape .workspace {
+  flex-direction: row;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.landscape .composer-pane {
+  width: 340px;
+  flex: none;
+  overflow: auto;
+  background: var(--surface-card);
+  border-right: var(--size-hairline) solid var(--line);
+}
+
+.landscape .posts-pane {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-4);
+  overflow: auto;
+}
+
+/* Composer */
+
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--surface-card);
+  border: var(--size-hairline) solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.landscape .composer {
+  min-height: 100%;
+  padding: var(--space-5) var(--space-4);
+  border: 0;
+  border-radius: 0;
+}
+
+/* The heading is for the side panel; in portrait the card speaks for itself. */
+.portrait .composer-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.composer-title {
+  font-size: 17px;
+  line-height: 24px;
+  font-weight: 700;
+}
+
+.channel-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Selected is accent-soft with an accent border, never only a tick. */
+.channel-option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--size-control-md);
+  max-width: 100%;
+  padding: 0 10px 0 var(--space-2);
+  border: var(--size-hairline) solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.channel-option:hover {
+  background: var(--surface-hover);
+}
+
+.channel-option:has(input:checked) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.channel-option input {
+  margin: 0;
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent);
+  flex: none;
+}
+
+.channel-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.composer-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.composer-foot .notice {
+  align-self: stretch;
+}
+
+.landscape .composer-foot {
+  margin-top: auto;
+  align-items: stretch;
+}
+
+/* Lists */
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0 var(--space-1) var(--space-2);
+}
+
+.section-head h2 {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.section-meta {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+.timeline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--surface-card);
+  border: var(--size-hairline) solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.timeline-item {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: 10px var(--space-3);
+}
+
+.timeline-item + .timeline-item {
+  border-top: var(--size-hairline) solid var(--line);
+}
+
+/* Times are mono, right-aligned in their column so the digits stack. */
+.due {
+  font: 500 13px/16px var(--font-mono);
+  letter-spacing: 0.01em;
+  color: var(--ink-muted);
+}
+
+.timeline-item .due {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  padding-top: 2px;
+}
+
+.timeline-item .due-time {
+  color: var(--ink);
+}
+
+.due-queued {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.timeline-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.post-meta,
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+.post-meta .badge,
+.card-meta .badge {
+  margin-left: auto;
+}
+
+.post-channel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-text {
+  font-size: 13px;
+  line-height: 20px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Landscape columns: sunken wells holding cards. */
+.columns {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(240px, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+  min-height: 100%;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-lg);
+  min-width: 0;
+}
+
+.column-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.column-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.column-count {
+  margin-left: auto;
+  font: 500 13px/16px var(--font-mono);
+  color: var(--ink-muted);
+}
+
+.column-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.column-empty {
+  padding: 0 var(--space-1) var(--space-1);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-muted);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) 10px;
+  background: var(--surface-card);
+  border: var(--size-hairline) solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+/* Empty: the fact, one sentence, no illustration. */
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  background: var(--surface-card);
+  border: var(--size-hairline) solid var(--line);
+  border-radius: var(--radius-lg);
+  color: var(--ink-muted);
+}
+
+.empty-headline {
+  font-size: 26px;
+  line-height: 30px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+/* Setup and Settings */
+
+.setup {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+}
+
+.setup-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: min(460px, 100%);
+  padding: var(--space-5);
+  background: var(--surface-card);
+  border: var(--size-hairline) solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+}
+
+.setup-card .brand {
+  margin-bottom: var(--space-2);
+}
+
+.setup-card ol {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.setup-title,
+.settings-title {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .connect {
-  display: grid;
-  gap: 0.75rem;
-  margin-top: 1rem;
-  max-width: 32rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
 }
 
-.connect label {
-  display: grid;
-  gap: 0.25rem;
+.connect button.primary {
+  align-self: flex-start;
 }
 
-.connect input {
-  font: inherit;
-  padding: 0.4rem;
-  background: var(--bg);
-  color: var(--fg);
-  border: 1px solid var(--line);
-  border-radius: 6px;
+.settings {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--size-app-gutter);
 }
 
-.note {
-  color: var(--muted);
-  font-size: 0.9rem;
+.settings-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 520px;
+  padding: var(--space-5);
+  background: var(--surface-card);
+  border: var(--size-hairline) solid var(--line);
+  border-radius: var(--radius-lg);
 }
 
-.onboarding ol {
-  padding-left: 1.25rem;
+.settings-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.setup p,
-.setup ol {
-  max-width: 36rem;
+.settings-card-head h2 {
+  font-size: 17px;
+  line-height: 24px;
+  font-weight: 700;
+}
+
+.settings-danger {
+  padding-top: var(--space-3);
+  border-top: var(--size-hairline) solid var(--line);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

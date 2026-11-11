@@ -6,6 +6,10 @@ productName: Dispatch
 copyright: Copyright © Scott Mallinson
 directories:
   output: release
+  # icon.png (1024 x 1024) is the source for the macOS icns, the dmg and the
+  # Windows exe and installer icons; electron-builder derives each from it, as
+  # Bureau's installers do. icon.svg is the editable source of the PNG.
+  buildResources: build-resources
 files:
   - dist/**/*
   - dist-electron/**/*
