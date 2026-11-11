@@ -92,7 +92,14 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # The release job publishes the GitHub Release. When that did not happen
+        # (the tag exists but no release does), create it from the tag here. The
+        # Windows and macOS jobs run together, so whichever loses the race finds
+        # the release the other created.
         run: |
+          gh release view "$TAG" > /dev/null 2>&1 \
+            || gh release create "$TAG" --verify-tag --generate-notes \
+            || gh release view "$TAG" > /dev/null
           find release -maxdepth 1 \( -name '*.dmg' -o -name '*.exe' -o -name '*.zip' \
             -o -name '*.blockmap' -o -name 'latest*.yml' \) -print0 \
             | xargs -0 -r gh release upload "$TAG" --clobber
