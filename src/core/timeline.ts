@@ -1,8 +1,11 @@
 import type { Channel, ChannelColumn, Post } from './types';
 
 /**
- * Portrait layout: every post in one list, soonest first.
- * Posts without a due time sort after the timed ones, in their original order.
+ * Portrait layout: every post in one list, newest first.
+ * "Newest" is the latest publish time, so the furthest-out post is at the top
+ * and the oldest sent post is at the bottom. Posts queued without a time go
+ * above all of them, in their original order: they publish after everything
+ * already given a time.
  */
 export function consolidatedTimeline(posts: readonly Post[]): Post[] {
   return posts
@@ -11,15 +14,16 @@ export function consolidatedTimeline(posts: readonly Post[]): Post[] {
       const aTime = a.post.dueAt === null ? null : Date.parse(a.post.dueAt);
       const bTime = b.post.dueAt === null ? null : Date.parse(b.post.dueAt);
       if (aTime === null && bTime === null) return a.index - b.index;
-      if (aTime === null) return 1;
-      if (bTime === null) return -1;
-      return aTime - bTime || a.index - b.index;
+      if (aTime === null) return -1;
+      if (bTime === null) return 1;
+      return bTime - aTime || a.index - b.index;
     })
     .map(({ post }) => post);
 }
 
 /**
- * Landscape layout: one column per channel, in the order the channels were given.
+ * Landscape layout: one column per channel, in the order the channels were given,
+ * each newest first.
  * Every channel gets a column, even when it has no posts. Posts on a channel that
  * is not in the list get a column of their own, labelled with the channel id.
  */
