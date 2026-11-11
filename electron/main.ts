@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, Menu, nativeTheme, net, shell } from 'electron';
+import { appendFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createBufferProvider, type PublishingProvider } from '../src/buffer/provider';
@@ -8,6 +9,17 @@ import { validateNewPost } from '../src/core/validate';
 import { BRIDGE_CHANNELS, type BufferSettingsView } from '../src/renderer/bridge';
 import { activeConfig, secureStorageAvailable, settingsStore } from './settings';
 import { registerUpdateIpc, startUpdates } from './updates';
+
+// TEMPORARY diagnostic: records what the operating system passes in and how the
+// link is read, in link-trace.log under the app's data folder.
+function traceLink(event: string, detail: unknown): void {
+  try {
+    const file = path.join(app.getPath('userData'), 'link-trace.log');
+    appendFileSync(file, `${new Date().toISOString()} ${event} ${JSON.stringify(detail)}\n`);
+  } catch {
+    // Diagnostic only.
+  }
+}
 
 /**
  * A compose link (from Bureau, or the browser) that the window has not taken yet.
@@ -79,6 +91,7 @@ function registerIpc(): void {
 
   ipcMain.handle(BRIDGE_CHANNELS.composeTake, () => {
     const request = pendingCompose;
+    traceLink('take', request);
     pendingCompose = null;
     return request;
   });
@@ -99,6 +112,7 @@ function focusWindow(): void {
  */
 function receiveLink(link: string): void {
   const request = parseComposeLink(link);
+  traceLink('receive', { link, request });
   if (!request) return;
   pendingCompose = request;
   // Before the app is ready, createWindow() runs later and takes the request.
@@ -190,6 +204,7 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on('second-instance', (_event, argv) => {
+    traceLink('second-instance', argv);
     const link = argv.find((arg) => parseComposeLink(arg) !== null);
     if (link) receiveLink(link);
     else focusWindow();
@@ -199,6 +214,7 @@ if (!app.requestSingleInstanceLock()) {
     event.preventDefault();
     receiveLink(url);
   });
+  traceLink('launch', process.argv);
   registerProtocol();
   const launchLink = process.argv.find((arg) => parseComposeLink(arg) !== null);
   if (launchLink) receiveLink(launchLink);
