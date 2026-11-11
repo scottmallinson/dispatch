@@ -2,6 +2,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import type { BufferSettingsView } from './bridge';
 import { Brand } from './brand';
 import { cleanErrorMessage } from './format';
+import { UpdatesCard } from './Updates';
 
 /** A centred card for the screens shown before Buffer is connected. */
 export function Setup({ children }: { children: ReactNode }) {
@@ -194,6 +195,7 @@ export function SettingsPanel({
           </p>
         )}
       </section>
+      <UpdatesCard />
     </main>
   );
 }
