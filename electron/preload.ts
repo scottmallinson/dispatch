@@ -10,6 +10,8 @@ const CHANNELS = {
   channels: 'dispatch:channels',
   posts: 'dispatch:posts',
   schedule: 'dispatch:schedule',
+  composeTake: 'dispatch:compose:take',
+  composeChanged: 'dispatch:compose:changed',
 } as const;
 
 const bridge: DispatchBridge = {
@@ -20,6 +22,12 @@ const bridge: DispatchBridge = {
   listChannels: () => ipcRenderer.invoke(CHANNELS.channels),
   listPosts: (channelIds) => ipcRenderer.invoke(CHANNELS.posts, channelIds),
   schedulePost: (post) => ipcRenderer.invoke(CHANNELS.schedule, post),
+  takeComposeRequest: () => ipcRenderer.invoke(CHANNELS.composeTake),
+  onComposeRequest: (listener) => {
+    const handler = () => listener();
+    ipcRenderer.on(CHANNELS.composeChanged, handler);
+    return () => ipcRenderer.removeListener(CHANNELS.composeChanged, handler);
+  },
 };
 
 contextBridge.exposeInMainWorld('dispatch', bridge);

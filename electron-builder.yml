@@ -14,6 +14,12 @@ files:
   - dist/**/*
   - dist-electron/**/*
   - package.json
+# The dispatch:// scheme opens the composer from Bureau's calendar. macOS reads it
+# from the app's Info.plist, so it must be declared here, not only at run time.
+protocols:
+  - name: Dispatch
+    schemes:
+      - dispatch
 publish: null
 mac:
   target:

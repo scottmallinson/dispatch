@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ComposeRequest } from '../core/compose-link';
 import type { Channel, NewPost, Post } from '../core/types';
 import type { BufferSettingsView } from './bridge';
 import { cleanErrorMessage } from './format';
@@ -42,6 +43,7 @@ export function App() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [compose, setCompose] = useState<ComposeRequest | null>(null);
   const configured = settings?.configured ?? false;
   const labels = useMemo(() => channelLabels(channels), [channels]);
 
@@ -73,6 +75,21 @@ export function App() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // Takes a link that arrived before this window was ready, then any that arrive later.
+  useEffect(() => {
+    if (!bridge) return;
+    const take = () => {
+      bridge.takeComposeRequest().then(
+        (request) => {
+          if (request) setCompose(request);
+        },
+        () => undefined,
+      );
+    };
+    take();
+    return bridge.onComposeRequest(take);
+  }, [bridge]);
 
   function handleSettingsChange(view: BufferSettingsView) {
     setSettings(view);
@@ -147,6 +164,7 @@ export function App() {
             <Composer
               channels={channels}
               labels={labels}
+              request={compose}
               onSchedule={schedule}
               onScheduled={refresh}
             />

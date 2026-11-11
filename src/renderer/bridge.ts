@@ -1,3 +1,4 @@
+import type { ComposeRequest } from '../core/compose-link';
 import type { Channel, NewPost, Post } from '../core/types';
 
 /** What the renderer may know about the Buffer connection. The key itself never leaves the main process. */
@@ -27,6 +28,10 @@ export interface DispatchBridge {
   listChannels(): Promise<Channel[]>;
   listPosts(channelIds: string[]): Promise<Post[]>;
   schedulePost(post: NewPost): Promise<Post>;
+  /** The compose request waiting for the composer, if any. Taking it clears it. */
+  takeComposeRequest(): Promise<ComposeRequest | null>;
+  /** Called whenever a new compose request arrives while the app is running. */
+  onComposeRequest(listener: () => void): () => void;
 }
 
 export const BRIDGE_CHANNELS = {
@@ -36,4 +41,6 @@ export const BRIDGE_CHANNELS = {
   channels: 'dispatch:channels',
   posts: 'dispatch:posts',
   schedule: 'dispatch:schedule',
+  composeTake: 'dispatch:compose:take',
+  composeChanged: 'dispatch:compose:changed',
 } as const;

@@ -3,9 +3,16 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createBufferProvider, type PublishingProvider } from '../src/buffer/provider';
 import { maskApiKey, validateBufferSettings } from '../src/core/settings';
+import { COMPOSE_SCHEME, parseComposeLink, type ComposeRequest } from '../src/core/compose-link';
 import { validateNewPost } from '../src/core/validate';
 import { BRIDGE_CHANNELS, type BufferSettingsView } from '../src/renderer/bridge';
 import { activeConfig, secureStorageAvailable, settingsStore } from './settings';
+
+/**
+ * A compose link (from Bureau, or the browser) that the window has not taken yet.
+ * Only the latest one is kept: a second link before the first is taken replaces it.
+ */
+let pendingCompose: ComposeRequest | null = null;
 
 /**
  * Requests go through Chromium's network stack rather than Node's fetch. Node's fetch
@@ -68,6 +75,55 @@ function registerIpc(): void {
     if (!result.ok) throw new Error(result.error);
     return providerOrThrow().schedulePost(result.value);
   });
+
+  ipcMain.handle(BRIDGE_CHANNELS.composeTake, () => {
+    const request = pendingCompose;
+    pendingCompose = null;
+    return request;
+  });
+}
+
+function focusWindow(): void {
+  const [window] = BrowserWindow.getAllWindows();
+  if (!window) return;
+  if (window.isMinimized()) window.restore();
+  window.show();
+  window.focus();
+}
+
+/**
+ * Handles a dispatch:// link. The window takes the request itself (see
+ * takeComposeRequest), so a link that arrives before the window has loaded is
+ * still delivered.
+ */
+function receiveLink(link: string): void {
+  const request = parseComposeLink(link);
+  if (!request) return;
+  pendingCompose = request;
+  // Before the app is ready, createWindow() runs later and takes the request.
+  if (!app.isReady()) return;
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+    return;
+  }
+  focusWindow();
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send(BRIDGE_CHANNELS.composeChanged);
+  }
+}
+
+/**
+ * Registers dispatch:// with the operating system. In development the app
+ * is started through Electron, so the registration must name the script too.
+ */
+function registerProtocol(): void {
+  if (process.defaultApp && process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient(COMPOSE_SCHEME, process.execPath, [
+      path.resolve(process.argv[1] ?? ''),
+    ]);
+  } else {
+    app.setAsDefaultProtocolClient(COMPOSE_SCHEME);
+  }
 }
 
 function setMenu(): void {
@@ -127,15 +183,35 @@ function createWindow(): void {
   void window.loadURL(entry);
 }
 
-app.whenReady().then(() => {
-  setMenu();
-  registerIpc();
-  createWindow();
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+// One running copy only. On Windows and Linux a dispatch:// link starts a second
+// copy, which hands its link to the first and quits.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', (_event, argv) => {
+    const link = argv.find((arg) => parseComposeLink(arg) !== null);
+    if (link) receiveLink(link);
+    else focusWindow();
   });
-});
+  // macOS delivers links here, possibly before the app is ready.
+  app.on('open-url', (event, url) => {
+    event.preventDefault();
+    receiveLink(url);
+  });
+  registerProtocol();
+  const launchLink = process.argv.find((arg) => parseComposeLink(arg) !== null);
+  if (launchLink) receiveLink(launchLink);
+
+  app.whenReady().then(() => {
+    setMenu();
+    registerIpc();
+    createWindow();
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+  });
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

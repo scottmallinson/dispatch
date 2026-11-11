@@ -1,14 +1,17 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import type { ComposeRequest } from '../core/compose-link';
 import type { Channel, NewPost } from '../core/types';
 import { describeOutcome, scheduleEach } from '../core/schedule';
 import { validatePostDraft } from '../core/validate';
 import { PlatformMark } from './brand';
-import { formatDue } from './format';
+import { formatDue, toLocalInput } from './format';
 
 interface ComposerProps {
   channels: Channel[];
   /** A short name per channel id, for the confirmation sentence. */
   labels: Map<string, string>;
+  /** A time to start from, such as one sent from Bureau's calendar. */
+  request: ComposeRequest | null;
   /** Schedules one post on one channel. */
   onSchedule: (post: NewPost) => Promise<void>;
   /** Called once after a batch, whatever the outcome, so the lists can refresh. */
@@ -17,13 +20,21 @@ interface ComposerProps {
 
 type Feedback = { ok: boolean; message: string };
 
-export function Composer({ channels, labels, onSchedule, onScheduled }: ComposerProps) {
+export function Composer({ channels, labels, request, onSchedule, onScheduled }: ComposerProps) {
   const [selected, setSelected] = useState<string[]>([]);
   const [text, setText] = useState('');
   const [timing, setTiming] = useState<'queue' | 'at'>('queue');
   const [when, setWhen] = useState('');
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // A new request sets the time and switches to "At a time". Other fields are left as they are.
+  useEffect(() => {
+    if (!request) return;
+    setTiming('at');
+    setWhen(toLocalInput(request.at));
+    setFeedback(null);
+  }, [request]);
 
   // A refresh can remove a channel; never keep one selected that is no longer there.
   useEffect(() => {

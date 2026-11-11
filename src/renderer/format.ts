@@ -37,6 +37,13 @@ export function formatDue(dueAt: string | null): string {
   return parts ? `${parts.day} ${parts.time}` : dueAt;
 }
 
+/** A publish time as the value of a `datetime-local` input, in the user's time zone. */
+export function toLocalInput(iso: string): string {
+  const date = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 /** Turns an error from the bridge into a sentence for the user, without Electron's IPC prefix. */
 export function cleanErrorMessage(err: unknown, fallback: string): string {
   if (!(err instanceof Error)) return fallback;
