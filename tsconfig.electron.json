@@ -14,5 +14,5 @@
     "types": ["node"]
   },
   "include": ["electron", "src/core", "src/buffer", "src/renderer/bridge.ts"],
-  "exclude": ["src/**/*.test.ts"]
+  "exclude": ["src/**/*.test.ts", "electron/**/*.test.ts"]
 }

@@ -176,3 +176,54 @@ time {
     padding: 0.75rem;
   }
 }
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--accent);
+}
+
+button.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+  margin-top: 1rem;
+}
+
+.connect {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  max-width: 32rem;
+}
+
+.connect label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.connect input {
+  font: inherit;
+  padding: 0.4rem;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.note {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.onboarding ol {
+  padding-left: 1.25rem;
+}
+
+.setup p,
+.setup ol {
+  max-width: 36rem;
+}
