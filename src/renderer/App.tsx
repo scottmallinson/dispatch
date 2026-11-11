@@ -1,20 +1,35 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Channel, NewPost, Post } from '../core/types';
-import { useOrientation } from './useOrientation';
+import type { BufferSettingsView } from './bridge';
+import { cleanErrorMessage } from './format';
 import { Composer } from './Composer';
 import { Timeline } from './Timeline';
 import { Columns } from './Columns';
+import { Onboarding, SettingsPanel } from './Connect';
+import { useOrientation } from './useOrientation';
 
 export function App() {
   const orientation = useOrientation();
   const bridge = window.dispatch;
+  const [settings, setSettings] = useState<BufferSettingsView | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const configured = settings?.configured ?? false;
+
+  useEffect(() => {
+    if (!bridge) return;
+    bridge
+      .getSettings()
+      .then(setSettings, (err: unknown) =>
+        setError(cleanErrorMessage(err, 'Could not read settings.')),
+      );
+  }, [bridge]);
 
   const refresh = useCallback(async () => {
-    if (!bridge?.configured) return;
+    if (!bridge || !configured) return;
     setLoading(true);
     try {
       const nextChannels = await bridge.listChannels();
@@ -23,15 +38,20 @@ export function App() {
       setPosts(nextPosts);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load posts from Buffer.');
+      setError(cleanErrorMessage(err, 'Could not load posts from Buffer.'));
     } finally {
       setLoading(false);
     }
-  }, [bridge]);
+  }, [bridge, configured]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  function handleSettingsChange(view: BufferSettingsView) {
+    setSettings(view);
+    setError(null);
+  }
 
   async function schedule(post: NewPost) {
     if (!bridge) throw new Error('Dispatch is not running inside the desktop app.');
@@ -46,15 +66,23 @@ export function App() {
       </main>
     );
   }
-  if (!bridge.configured) {
+  if (settings === null) {
     return (
       <main className="setup">
-        <h1>Dispatch</h1>
-        <p>
-          Buffer is not configured. Set <code>BUFFER_API_KEY</code> and{' '}
-          <code>BUFFER_ORGANIZATION_ID</code>, then restart.
-        </p>
+        <p>{error ?? 'Loading…'}</p>
       </main>
+    );
+  }
+  if (!configured) {
+    return <Onboarding settings={settings} onConnected={handleSettingsChange} />;
+  }
+  if (showSettings) {
+    return (
+      <SettingsPanel
+        settings={settings}
+        onChange={handleSettingsChange}
+        onClose={() => setShowSettings(false)}
+      />
     );
   }
 
@@ -62,9 +90,14 @@ export function App() {
     <main className={`app ${orientation}`}>
       <header>
         <h1>Dispatch</h1>
-        <button type="button" onClick={() => void refresh()} disabled={loading}>
-          {loading ? 'Loading…' : 'Refresh'}
-        </button>
+        <div className="header-actions">
+          <button type="button" className="secondary" onClick={() => setShowSettings(true)}>
+            Settings
+          </button>
+          <button type="button" onClick={() => void refresh()} disabled={loading}>
+            {loading ? 'Loading…' : 'Refresh'}
+          </button>
+        </div>
       </header>
       {error && (
         <p className="error" role="alert">
