@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, net, shell } from 'electron';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createBufferProvider, type PublishingProvider } from '../src/buffer/provider';
@@ -6,6 +6,13 @@ import { maskApiKey, validateBufferSettings } from '../src/core/settings';
 import { validateNewPost } from '../src/core/validate';
 import { BRIDGE_CHANNELS, type BufferSettingsView } from '../src/renderer/bridge';
 import { activeConfig, secureStorageAvailable, settingsStore } from './settings';
+
+/**
+ * Requests go through Chromium's network stack rather than Node's fetch. Node's fetch
+ * ignores the system proxy and the Windows certificate store, which is why connecting
+ * failed with a bare "fetch failed" on machines behind a proxy or inspecting firewall.
+ */
+const chromiumFetch: typeof fetch = (input, init) => net.fetch(String(input), init);
 
 /** The connection status the renderer shows. Never includes the full key. */
 function settingsView(): BufferSettingsView {
@@ -22,7 +29,11 @@ function settingsView(): BufferSettingsView {
 function providerOrThrow(): PublishingProvider {
   const config = activeConfig();
   if (!config) throw new Error('Buffer is not connected yet. Connect it in Settings.');
-  return createBufferProvider({ apiKey: config.apiKey, organizationId: config.organizationId });
+  return createBufferProvider({
+    apiKey: config.apiKey,
+    organizationId: config.organizationId,
+    fetchImpl: chromiumFetch,
+  });
 }
 
 function registerIpc(): void {
@@ -32,7 +43,7 @@ function registerIpc(): void {
     const result = validateBufferSettings(input);
     if (!result.ok) throw new Error(result.error);
     // Test the new details before storing them, so a typo never replaces a working key.
-    const provider = createBufferProvider(result.value);
+    const provider = createBufferProvider({ ...result.value, fetchImpl: chromiumFetch });
     await provider.listChannels();
     settingsStore().write(result.value);
     return settingsView();

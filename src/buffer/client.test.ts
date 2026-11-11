@@ -62,6 +62,40 @@ describe('createGraphQLClient', () => {
   });
 });
 
+describe('network failures', () => {
+  it('report the underlying cause instead of a bare "fetch failed"', async () => {
+    const cause = Object.assign(new Error('getaddrinfo ENOTFOUND api.buffer.com'), {
+      code: 'ENOTFOUND',
+    });
+    const failing = createGraphQLClient({
+      apiKey: 'k',
+      fetchImpl: (async () => {
+        throw new TypeError('fetch failed', { cause });
+      }) as typeof fetch,
+    });
+
+    const error = await failing('query { ok }').catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(BufferError);
+    expect((error as BufferError).message).toBe(
+      'Could not reach Buffer. Reason: getaddrinfo ENOTFOUND api.buffer.com.',
+    );
+  });
+
+  it('falls back to the error code when the cause has no message', async () => {
+    const failing = createGraphQLClient({
+      apiKey: 'k',
+      fetchImpl: (async () => {
+        throw new TypeError('fetch failed', { cause: { code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' } });
+      }) as typeof fetch,
+    });
+
+    const error = await failing('query { ok }').catch((e: unknown) => e);
+    expect((error as BufferError).message).toBe(
+      'Could not reach Buffer. Reason: UNABLE_TO_VERIFY_LEAF_SIGNATURE.',
+    );
+  });
+});
+
 describe('gqlString', () => {
   it('encodes quotes and newlines as a GraphQL string literal', () => {
     expect(gqlString('say "hi"\nthere')).toBe('"say \\"hi\\"\\nthere"');

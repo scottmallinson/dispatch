@@ -33,14 +33,19 @@ export function createGraphQLClient(options: GraphQLClientOptions) {
   const doFetch = options.fetchImpl ?? fetch;
 
   return async function request<T>(query: string): Promise<T> {
-    const response = await doFetch(endpoint, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${options.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query }),
-    });
+    let response: Response;
+    try {
+      response = await doFetch(endpoint, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${options.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+      });
+    } catch (error) {
+      throw new BufferError(`Could not reach Buffer. ${describeNetworkError(error)}`);
+    }
 
     if (response.status === 429) {
       const retry = Number(response.headers.get('Retry-After'));
@@ -63,6 +68,20 @@ export function createGraphQLClient(options: GraphQLClientOptions) {
     }
     return body.data;
   };
+}
+
+/**
+ * Node's fetch fails with a generic "fetch failed" and keeps the real reason on
+ * `cause` (for example ENOTFOUND or a certificate error), so surface that instead.
+ */
+export function describeNetworkError(error: unknown): string {
+  const cause = error instanceof Error ? (error.cause as unknown) : undefined;
+  if (cause instanceof Error && cause.message) return `Reason: ${cause.message}.`;
+  if (cause && typeof cause === 'object' && 'code' in cause && typeof cause.code === 'string') {
+    return `Reason: ${cause.code}.`;
+  }
+  if (error instanceof Error && error.message) return `Reason: ${error.message}.`;
+  return 'Check the internet connection and try again.';
 }
 
 /** Encodes a value as a GraphQL string literal. */
