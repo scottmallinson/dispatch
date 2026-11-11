@@ -99,6 +99,21 @@ describe('createBufferProvider', () => {
     expect(queries).toHaveLength(2);
   });
 
+  it('filters posts by bare enum status values, not quoted strings', async () => {
+    const { fetchImpl, queries } = fakeBuffer({
+      'posts(': () => ({
+        posts: { edges: [], pageInfo: { hasNextPage: false, endCursor: null } },
+      }),
+    });
+    const provider = createBufferProvider({ apiKey: 'k', organizationId: 'org-1', fetchImpl });
+
+    await provider.listPosts(['c1']);
+
+    // Buffer's PostStatus is a GraphQL enum: quoting its values is rejected by the API.
+    expect(queries[0]).toContain('status: [scheduled, sent, error]');
+    expect(queries[0]).not.toContain('"scheduled"');
+  });
+
   it('does not query Buffer when there are no channels to list posts for', async () => {
     const { fetchImpl, queries } = fakeBuffer({});
     const provider = createBufferProvider({ apiKey: 'k', organizationId: 'org-1', fetchImpl });

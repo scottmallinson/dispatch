@@ -24,7 +24,7 @@ export function postsQuery(
   const cursor = after ? `, after: ${gqlString(after)}` : '';
   const channels = channelIds.map(gqlString).join(', ');
   return `query {
-  posts(first: 100${cursor}, input: { organizationId: ${gqlString(organizationId)}, filter: { status: ["scheduled", "sent", "error"], channelIds: [${channels}] } }) {
+  posts(first: 100${cursor}, input: { organizationId: ${gqlString(organizationId)}, filter: { status: [scheduled, sent, error], channelIds: [${channels}] } }) {
     edges {
       node {
         id
