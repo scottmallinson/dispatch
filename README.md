@@ -13,20 +13,23 @@ reply to comments. Buffer's API does not expose them yet (see
 
 ## Running it
 
-Dispatch needs a Buffer API key and the id of your Buffer organization. Both
-are read from the environment, and the key stays in the Electron main process.
+Install dependencies, then start the app:
 
 ```sh
 npm install
-export BUFFER_API_KEY=...            # from Buffer's API settings
-export BUFFER_ORGANIZATION_ID=...    # your organization id
-npm run desktop                      # build, then launch the Electron app
+npm run desktop
 ```
 
-Without both variables the app opens, says Buffer is not configured, and makes
-no requests. For UI work without Electron, run `npm run dev` and open the
-printed URL. There is no bridge in a browser, so the page explains that the
-desktop app is needed.
+On first run, Dispatch asks for a Buffer API key and your organization ID. It
+tests them against Buffer before saving. The key is encrypted with the OS keychain
+and stays in the main process. Change or remove it later from Settings.
+
+For a headless or scripted setup, `BUFFER_API_KEY` and `BUFFER_ORGANIZATION_ID`
+override anything saved in the app. See
+[ADR 0005](docs/adr/0005-store-buffer-credentials-in-the-app.md).
+
+For UI work without Electron, run `npm run dev` and open the printed URL. There
+is no bridge in a browser, so the page explains that the desktop app is needed.
 
 ## Layout of the code
 
