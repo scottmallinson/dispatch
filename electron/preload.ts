@@ -13,6 +13,7 @@ const CHANNELS = {
 } as const;
 
 const bridge: DispatchBridge = {
+  platform: process.platform,
   getSettings: () => ipcRenderer.invoke(CHANNELS.settingsGet),
   saveSettings: (input) => ipcRenderer.invoke(CHANNELS.settingsSave, input),
   clearSettings: () => ipcRenderer.invoke(CHANNELS.settingsClear),

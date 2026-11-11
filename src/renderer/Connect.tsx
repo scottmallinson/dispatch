@@ -1,6 +1,19 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import type { BufferSettingsView } from './bridge';
+import { Brand } from './brand';
 import { cleanErrorMessage } from './format';
+
+/** A centred card for the screens shown before Buffer is connected. */
+export function Setup({ children }: { children: ReactNode }) {
+  return (
+    <main className="setup">
+      <div className="setup-card">
+        <Brand />
+        {children}
+      </div>
+    </main>
+  );
+}
 
 const BUFFER_API_SETTINGS = 'https://publish.buffer.com/settings/api';
 
@@ -46,17 +59,22 @@ export function ConnectForm({ settings, submitLabel, onSaved }: ConnectFormProps
   return (
     <form className="connect" onSubmit={submit}>
       {!settings.secureStorageAvailable && (
-        <p className="error" role="alert">
-          This computer has no secure storage, so Dispatch cannot save a key. Set BUFFER_API_KEY and
-          BUFFER_ORGANIZATION_ID as environment variables instead.
+        <p className="notice notice-error" role="alert">
+          This computer has no secure storage, so Dispatch cannot save a key. Set{' '}
+          <code>BUFFER_API_KEY</code> and <code>BUFFER_ORGANIZATION_ID</code> as environment
+          variables instead.
         </p>
       )}
       {settings.source === 'environment' && (
-        <p className="note">Environment variables are set. They override anything saved here.</p>
+        <p className="notice">
+          Set in the environment. <code>BUFFER_API_KEY</code> and{' '}
+          <code>BUFFER_ORGANIZATION_ID</code> override anything saved here.
+        </p>
       )}
-      <label>
-        API key
+      <label className="field">
+        <span className="field-label">API key</span>
         <input
+          className="text-input"
           type="password"
           autoComplete="off"
           spellCheck={false}
@@ -65,9 +83,10 @@ export function ConnectForm({ settings, submitLabel, onSaved }: ConnectFormProps
           onChange={(e) => setApiKey(e.target.value)}
         />
       </label>
-      <label>
-        Organization ID
+      <label className="field">
+        <span className="field-label">Organization ID</span>
         <input
+          className="text-input"
           type="text"
           autoComplete="off"
           spellCheck={false}
@@ -76,11 +95,11 @@ export function ConnectForm({ settings, submitLabel, onSaved }: ConnectFormProps
         />
       </label>
       {error && (
-        <p className="error" role="alert">
+        <p className="notice notice-error" role="alert">
           {error}
         </p>
       )}
-      <button type="submit" disabled={!canSubmit}>
+      <button type="submit" className="primary" disabled={!canSubmit}>
         {busy ? 'Connecting…' : submitLabel}
       </button>
     </form>
@@ -96,8 +115,8 @@ export function Onboarding({
   onConnected: (view: BufferSettingsView) => void;
 }) {
   return (
-    <main className="setup">
-      <h1>Connect Dispatch to Buffer</h1>
+    <Setup>
+      <h1 className="setup-title">Connect Dispatch to Buffer</h1>
       <p>Dispatch schedules posts through your Buffer account. You need two things from Buffer:</p>
       <ol>
         <li>
@@ -109,12 +128,12 @@ export function Onboarding({
         </li>
         <li>Your organization ID.</li>
       </ol>
-      <p>
+      <p className="muted small">
         Dispatch tests the connection before it saves anything. The key is stored encrypted on this
         computer.
       </p>
       <ConnectForm settings={settings} submitLabel="Connect" onSaved={onConnected} />
-    </main>
+    </Setup>
   );
 }
 
@@ -141,33 +160,40 @@ export function SettingsPanel({
     }
   }
 
+  const state = settings.source === 'environment' ? 'Set in the environment' : 'Connected';
+
   return (
-    <main className="app">
-      <header>
-        <h1>Settings</h1>
-        <button type="button" className="secondary" onClick={onClose}>
-          Back
-        </button>
-      </header>
-      <h2>Buffer</h2>
-      <ConnectForm
-        settings={settings}
-        submitLabel="Save and test"
-        onSaved={(view) => {
-          onChange(view);
-          onClose();
-        }}
-      />
-      {settings.source === 'saved' && (
-        <button type="button" className="secondary danger" onClick={removeKey}>
-          Remove saved key
-        </button>
-      )}
-      {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      )}
+    <main className="settings">
+      <h1 className="settings-title">Settings</h1>
+      <section className="settings-card" aria-labelledby="buffer-settings">
+        <div className="settings-card-head">
+          <h2 id="buffer-settings">Buffer</h2>
+          <span className="badge badge-ok">
+            <span className="badge-dot" aria-hidden />
+            {state}
+          </span>
+        </div>
+        <ConnectForm
+          settings={settings}
+          submitLabel="Save and test"
+          onSaved={(view) => {
+            onChange(view);
+            onClose();
+          }}
+        />
+        {settings.source === 'saved' && (
+          <div className="settings-danger">
+            <button type="button" className="danger" onClick={removeKey}>
+              Remove saved key
+            </button>
+          </div>
+        )}
+        {error && (
+          <p className="notice notice-error" role="alert">
+            {error}
+          </p>
+        )}
+      </section>
     </main>
   );
 }

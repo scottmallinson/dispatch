@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Channel, NewPost, Post } from '../core/types';
 import type { BufferSettingsView } from './bridge';
 import { cleanErrorMessage } from './format';
 import { Composer } from './Composer';
 import { Timeline } from './Timeline';
 import { Columns } from './Columns';
-import { Onboarding, SettingsPanel } from './Connect';
+import { Onboarding, SettingsPanel, Setup } from './Connect';
 import { useOrientation } from './useOrientation';
+import { Brand } from './brand';
+import { channelLabels } from '../core/platforms';
 
 export function App() {
   const orientation = useOrientation();
@@ -18,6 +20,7 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const configured = settings?.configured ?? false;
+  const labels = useMemo(() => channelLabels(channels), [channels]);
 
   useEffect(() => {
     if (!bridge) return;
@@ -55,61 +58,94 @@ export function App() {
 
   async function schedule(post: NewPost) {
     if (!bridge) throw new Error('Dispatch is not running inside the desktop app.');
-    await bridge.schedulePost(post);
-    await refresh();
+    try {
+      await bridge.schedulePost(post);
+    } catch (err) {
+      throw new Error(cleanErrorMessage(err, 'Buffer refused the post.'));
+    }
   }
 
   if (!bridge) {
     return (
-      <main className="setup">
+      <Setup>
         <p>Open Dispatch in the desktop app to load Buffer data.</p>
-      </main>
+      </Setup>
     );
   }
   if (settings === null) {
     return (
-      <main className="setup">
-        <p>{error ?? 'Loading…'}</p>
-      </main>
+      <Setup>
+        <p className={error ? 'notice notice-error' : 'muted'} role={error ? 'alert' : undefined}>
+          {error ?? 'Loading…'}
+        </p>
+      </Setup>
     );
   }
   if (!configured) {
     return <Onboarding settings={settings} onConnected={handleSettingsChange} />;
   }
-  if (showSettings) {
-    return (
-      <SettingsPanel
-        settings={settings}
-        onChange={handleSettingsChange}
-        onClose={() => setShowSettings(false)}
-      />
-    );
-  }
 
   return (
-    <main className={`app ${orientation}`}>
-      <header>
-        <h1>Dispatch</h1>
-        <div className="header-actions">
-          <button type="button" className="secondary" onClick={() => setShowSettings(true)}>
-            Settings
-          </button>
-          <button type="button" onClick={() => void refresh()} disabled={loading}>
-            {loading ? 'Loading…' : 'Refresh'}
-          </button>
+    <div className={`app ${orientation}`}>
+      <header className="topbar">
+        <Brand />
+        <div className="topbar-actions">
+          <span className={`badge ${error ? 'badge-danger' : 'badge-ok'}`}>
+            <span className="badge-dot" aria-hidden />
+            Buffer
+            <span className="sr-only">{error ? ' has a problem' : ' connected'}</span>
+          </span>
+          {showSettings ? (
+            <button type="button" className="ghost" onClick={() => setShowSettings(false)}>
+              Back
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => void refresh()}
+                disabled={loading}
+              >
+                {loading ? 'Loading…' : 'Refresh'}
+              </button>
+              <button type="button" className="ghost" onClick={() => setShowSettings(true)}>
+                Settings
+              </button>
+            </>
+          )}
         </div>
       </header>
-      {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      )}
-      <Composer channels={channels} onSchedule={schedule} />
-      {orientation === 'portrait' ? (
-        <Timeline posts={posts} channels={channels} />
+      {showSettings ? (
+        <SettingsPanel
+          settings={settings}
+          onChange={handleSettingsChange}
+          onClose={() => setShowSettings(false)}
+        />
       ) : (
-        <Columns posts={posts} channels={channels} />
+        <main className="workspace">
+          <aside className="composer-pane">
+            <Composer
+              channels={channels}
+              labels={labels}
+              onSchedule={schedule}
+              onScheduled={refresh}
+            />
+          </aside>
+          <div className="posts-pane">
+            {error && (
+              <p className="notice notice-error" role="alert">
+                {error}
+              </p>
+            )}
+            {orientation === 'portrait' ? (
+              <Timeline posts={posts} channels={channels} />
+            ) : (
+              <Columns posts={posts} channels={channels} />
+            )}
+          </div>
+        </main>
       )}
-    </main>
+    </div>
   );
 }

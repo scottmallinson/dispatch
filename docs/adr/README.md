@@ -4,7 +4,8 @@ We record significant decisions as short ADRs, numbered sequentially
 (`0001-title.md`). Never edit an accepted ADR's decision; supersede it with a
 new one. Copy [`0000-template.md`](0000-template.md) to start.
 
-| ADR                                           | Title                         | Status   |
-| --------------------------------------------- | ----------------------------- | -------- |
-| [0001](0001-record-architecture-decisions.md) | Record architecture decisions | Accepted |
-| [0002](0002-auto-merge-dependabot-updates.md) | Auto-merge Dependabot updates | Accepted |
+| ADR                                            | Title                          | Status   |
+| ---------------------------------------------- | ------------------------------ | -------- |
+| [0001](0001-record-architecture-decisions.md)  | Record architecture decisions  | Accepted |
+| [0002](0002-auto-merge-dependabot-updates.md)  | Auto-merge Dependabot updates  | Accepted |
+| [0006](0006-adopt-the-bureau-design-system.md) | Adopt the Bureau design system | Accepted |
