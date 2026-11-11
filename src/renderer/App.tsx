@@ -10,11 +10,34 @@ import { useOrientation } from './useOrientation';
 import { Brand } from './brand';
 import { channelLabels } from '../core/platforms';
 
+const TABS = [
+  { id: 'posts', label: 'Posts' },
+  { id: 'settings', label: 'Settings' },
+] as const;
+
+type Tab = (typeof TABS)[number]['id'];
+
+function tabFromHash(): Tab {
+  const hash = window.location.hash.replace('#', '');
+  return TABS.some((t) => t.id === hash) ? (hash as Tab) : 'posts';
+}
+
+/** The section in the URL hash, as in Bureau, so the tabs are plain links. */
+function useTab(): Tab {
+  const [tab, setTab] = useState<Tab>(tabFromHash);
+  useEffect(() => {
+    const onHash = () => setTab(tabFromHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  return tab;
+}
+
 export function App() {
   const orientation = useOrientation();
   const bridge = window.dispatch;
   const [settings, setSettings] = useState<BufferSettingsView | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
+  const tab = useTab();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -89,38 +112,34 @@ export function App() {
     <div className={`app ${orientation}`}>
       <header className="topbar">
         <Brand />
-        <div className="topbar-actions">
-          <span className={`badge ${error ? 'badge-danger' : 'badge-ok'}`}>
-            <span className="badge-dot" aria-hidden />
+        <nav className="tabs" aria-label="Sections">
+          {TABS.map((t) => (
+            <a key={t.id} href={`#${t.id}`} aria-current={tab === t.id ? 'page' : undefined}>
+              {t.label}
+            </a>
+          ))}
+        </nav>
+        <div className="sources">
+          <span className={`source-badge ${error ? 'error' : 'live'}`} title={error ?? 'Connected'}>
             Buffer
-            <span className="sr-only">{error ? ' has a problem' : ' connected'}</span>
           </span>
-          {showSettings ? (
-            <button type="button" className="ghost" onClick={() => setShowSettings(false)}>
-              Back
-            </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                className="ghost"
-                onClick={() => void refresh()}
-                disabled={loading}
-              >
-                {loading ? 'Loading…' : 'Refresh'}
-              </button>
-              <button type="button" className="ghost" onClick={() => setShowSettings(true)}>
-                Settings
-              </button>
-            </>
-          )}
+          <button
+            type="button"
+            className="icon-button"
+            onClick={() => void refresh()}
+            disabled={loading}
+            aria-label="Reload"
+            title="Reload"
+          >
+            ↻
+          </button>
         </div>
       </header>
-      {showSettings ? (
+      {tab === 'settings' ? (
         <SettingsPanel
           settings={settings}
           onChange={handleSettingsChange}
-          onClose={() => setShowSettings(false)}
+          onClose={() => (window.location.hash = 'posts')}
         />
       ) : (
         <main className="workspace">
