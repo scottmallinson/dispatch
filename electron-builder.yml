@@ -39,3 +39,8 @@ win:
   target:
     - target: nsis
       arch: [x64]
+# The installer's name has no spaces. GitHub turns the spaces in an uploaded
+# file's name into dots, so the name in latest.yml did not match the release
+# asset and every Windows update download returned 404.
+nsis:
+  artifactName: 'Dispatch-Setup-${version}.${ext}'
