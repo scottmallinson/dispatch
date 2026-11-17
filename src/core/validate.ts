@@ -6,13 +6,22 @@ export type ValidationResult = { ok: true; value: NewPost } | { ok: false; error
 export function validateNewPost(input: unknown): ValidationResult {
   if (typeof input !== 'object' || input === null)
     return { ok: false, error: 'Post must be an object.' };
-  const { channelId, text, dueAt } = input as Record<string, unknown>;
+  const { channelId, text, dueAt, publishNow } = input as Record<string, unknown>;
 
   if (typeof channelId !== 'string' || channelId.trim() === '') {
     return { ok: false, error: 'Choose a channel.' };
   }
   if (typeof text !== 'string' || text.trim() === '') {
     return { ok: false, error: 'Write something to post.' };
+  }
+  if (publishNow === true) {
+    if (dueAt !== null && dueAt !== undefined) {
+      return { ok: false, error: 'Publish now cannot also have a time.' };
+    }
+    return {
+      ok: true,
+      value: { channelId: channelId.trim(), text, dueAt: null, publishNow: true },
+    };
   }
   if (dueAt !== null && dueAt !== undefined) {
     if (typeof dueAt !== 'string' || Number.isNaN(Date.parse(dueAt))) {
@@ -29,6 +38,7 @@ export function validateNewPost(input: unknown): ValidationResult {
       channelId: channelId.trim(),
       text,
       dueAt: typeof dueAt === 'string' ? new Date(dueAt).toISOString() : null,
+      publishNow: false,
     },
   };
 }
@@ -42,7 +52,7 @@ export type DraftValidationResult = { ok: true; value: NewPost[] } | { ok: false
 export function validatePostDraft(input: unknown): DraftValidationResult {
   if (typeof input !== 'object' || input === null)
     return { ok: false, error: 'Post must be an object.' };
-  const { channelIds, text, dueAt } = input as Record<string, unknown>;
+  const { channelIds, text, dueAt, publishNow } = input as Record<string, unknown>;
 
   if (!Array.isArray(channelIds) || !channelIds.every((id) => typeof id === 'string')) {
     return { ok: false, error: 'Choose at least one channel.' };
@@ -52,7 +62,7 @@ export function validatePostDraft(input: unknown): DraftValidationResult {
 
   const posts: NewPost[] = [];
   for (const channelId of unique) {
-    const result = validateNewPost({ channelId, text, dueAt });
+    const result = validateNewPost({ channelId, text, dueAt, publishNow });
     if (!result.ok) return result;
     posts.push(result.value);
   }

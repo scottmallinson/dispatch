@@ -148,6 +148,28 @@ describe('createBufferProvider', () => {
     expect(queries[0]).toContain('schedulingType: automatic');
   });
 
+  it('publishes a post straight away using shareNow', async () => {
+    const { fetchImpl, queries } = fakeBuffer({
+      'createPost(': () => ({
+        createPost: {
+          post: { id: 'now', text: 'Hi', dueAt: null, channelId: 'c1', status: 'sent' },
+        },
+      }),
+    });
+    const provider = createBufferProvider({ apiKey: 'k', organizationId: 'org-1', fetchImpl });
+
+    const post = await provider.schedulePost({
+      channelId: 'c1',
+      text: 'Hi',
+      dueAt: null,
+      publishNow: true,
+    });
+    expect(post.id).toBe('now');
+    expect(queries[0]).toContain('mode: shareNow');
+    expect(queries[0]).toContain('schedulingType: automatic');
+    expect(queries[0]).not.toContain('dueAt:');
+  });
+
   it('queues a post with no time using addToQueue', async () => {
     const { fetchImpl, queries } = fakeBuffer({
       'createPost(': () => ({
@@ -158,7 +180,7 @@ describe('createBufferProvider', () => {
     });
     const provider = createBufferProvider({ apiKey: 'k', organizationId: 'org-1', fetchImpl });
 
-    await provider.schedulePost({ channelId: 'c1', text: 'Hi', dueAt: null });
+    await provider.schedulePost({ channelId: 'c1', text: 'Hi', dueAt: null, publishNow: false });
     expect(queries[0]).toContain('mode: addToQueue');
     expect(queries[0]).not.toContain('dueAt:');
   });
@@ -170,7 +192,7 @@ describe('createBufferProvider', () => {
     const provider = createBufferProvider({ apiKey: 'k', organizationId: 'org-1', fetchImpl });
 
     await expect(
-      provider.schedulePost({ channelId: 'c1', text: 'Hi', dueAt: null }),
+      provider.schedulePost({ channelId: 'c1', text: 'Hi', dueAt: null, publishNow: false }),
     ).rejects.toThrow('Channel is disconnected.');
   });
 });

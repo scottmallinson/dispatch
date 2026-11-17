@@ -37,16 +37,20 @@ export function joinNames(names: readonly string[]): string {
 
 /**
  * The sentence the composer shows after scheduling. It names the channels and
- * the time, and on a failure says what to do next.
+ * the time, and on a failure says what to do next. A post sent with "Now" is
+ * published rather than scheduled, so it says so.
  */
 export function describeOutcome(
   outcome: ScheduleOutcome,
   labelFor: (channelId: string) => string,
   when: string,
+  publishedNow = false,
 ): { ok: boolean; message: string } {
   const done = joinNames(outcome.scheduled.map(labelFor));
+  const verb = publishedNow ? 'Published' : 'Scheduled';
+  const timing = publishedNow ? 'now' : `for ${when}`;
   if (outcome.failed.length === 0) {
-    return { ok: true, message: `Scheduled on ${done} for ${when}.` };
+    return { ok: true, message: `${verb} on ${done} ${timing}.` };
   }
   const clean = (error: string) => error.trim().replace(/\.$/, '');
   const [first] = outcome.failed;
@@ -58,6 +62,6 @@ export function describeOutcome(
     outcome.failed.length === 1
       ? 'The post is still here with that channel selected, so you can try again.'
       : 'The post is still here with those channels selected, so you can try again.';
-  const prefix = outcome.scheduled.length > 0 ? `Scheduled on ${done}. ` : '';
+  const prefix = outcome.scheduled.length > 0 ? `${verb} on ${done}. ` : '';
   return { ok: false, message: `${prefix}Buffer refused the post on ${refused}. ${retry}` };
 }

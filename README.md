@@ -9,8 +9,10 @@ two layouts that switch with the window shape:
 - **Landscape:** one column per connected platform channel, each newest first,
   with the composer in a side panel.
 
-Write a post once and pick as many channels as you like. Dispatch sends one
-post to each channel in turn. If Buffer refuses one, the others still go, and
+Write a post once and pick as many channels as you like. Choose when it goes
+out: the next free slot, a time you set, or **Now**, which publishes straight
+away through Buffer and cannot be unsent. Dispatch sends one post to each
+channel in turn. If Buffer refuses one, the others still go, and
 the composer keeps the post with the refused channels selected so you can try
 again.
 
