@@ -2,7 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { describeOutcome, joinNames, scheduleEach } from './schedule';
 import type { NewPost } from './types';
 
-const post = (channelId: string): NewPost => ({ channelId, text: 'Hi', dueAt: null });
+const post = (channelId: string): NewPost => ({
+  channelId,
+  text: 'Hi',
+  dueAt: null,
+  publishNow: false,
+});
 const labels: Record<string, string> = { bsky: 'Bluesky', masto: 'Mastodon', li: 'LinkedIn' };
 const labelFor = (id: string) => labels[id] ?? id;
 
@@ -67,6 +72,30 @@ describe('describeOutcome', () => {
       ok: false,
       message:
         'Scheduled on Bluesky. Buffer refused the post on Mastodon: Text is too long. ' +
+        'The post is still here with that channel selected, so you can try again.',
+    });
+  });
+
+  it('says a post sent with Now was published, not scheduled', () => {
+    expect(
+      describeOutcome(
+        { scheduled: ['bsky', 'masto'], failed: [] },
+        labelFor,
+        'the next free slot',
+        true,
+      ),
+    ).toEqual({ ok: true, message: 'Published on Bluesky and Mastodon now.' });
+    expect(
+      describeOutcome(
+        { scheduled: ['bsky'], failed: [{ channelId: 'masto', error: 'Disconnected.' }] },
+        labelFor,
+        'the next free slot',
+        true,
+      ),
+    ).toEqual({
+      ok: false,
+      message:
+        'Published on Bluesky. Buffer refused the post on Mastodon: Disconnected. ' +
         'The post is still here with that channel selected, so you can try again.',
     });
   });

@@ -19,11 +19,13 @@ interface ComposerProps {
 }
 
 type Feedback = { ok: boolean; message: string };
+/** Next free slot, a chosen time, or publish straight away. */
+type Timing = 'queue' | 'at' | 'now';
 
 export function Composer({ channels, labels, request, onSchedule, onScheduled }: ComposerProps) {
   const [selected, setSelected] = useState<string[]>([]);
   const [text, setText] = useState('');
-  const [timing, setTiming] = useState<'queue' | 'at'>('queue');
+  const [timing, setTiming] = useState<Timing>('queue');
   const [when, setWhen] = useState('');
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [busy, setBusy] = useState(false);
@@ -63,6 +65,7 @@ export function Composer({ channels, labels, request, onSchedule, onScheduled }:
       channelIds,
       text,
       dueAt: timing === 'at' ? when : null,
+      publishNow: timing === 'now',
     });
     if (!result.ok) {
       setFeedback({ ok: false, message: result.error });
@@ -74,11 +77,13 @@ export function Composer({ channels, labels, request, onSchedule, onScheduled }:
     try {
       const outcome = await scheduleEach(result.value, onSchedule);
       const dueAt = result.value[0]?.dueAt ?? null;
+      const publishedNow = timing === 'now';
       setFeedback(
         describeOutcome(
           outcome,
           (id) => labels.get(id) ?? id,
           dueAt === null ? 'the next free slot' : formatDue(dueAt),
+          publishedNow,
         ),
       );
       if (outcome.failed.length === 0) {
@@ -163,6 +168,15 @@ export function Composer({ channels, labels, request, onSchedule, onScheduled }:
               />
               At a time
             </label>
+            <label>
+              <input
+                type="radio"
+                name="timing"
+                checked={timing === 'now'}
+                onChange={() => setTiming('now')}
+              />
+              Now
+            </label>
           </div>
           {timing === 'at' && (
             <input
@@ -186,7 +200,17 @@ export function Composer({ channels, labels, request, onSchedule, onScheduled }:
           </p>
         )}
         <button type="submit" className="primary" disabled={busy || channels.length === 0}>
-          {busy ? 'Scheduling…' : count > 1 ? `Schedule ${count} posts` : 'Schedule'}
+          {busy
+            ? timing === 'now'
+              ? 'Publishing…'
+              : 'Scheduling…'
+            : timing === 'now'
+              ? count > 1
+                ? `Publish ${count} posts now`
+                : 'Publish now'
+              : count > 1
+                ? `Schedule ${count} posts`
+                : 'Schedule'}
         </button>
       </div>
     </form>

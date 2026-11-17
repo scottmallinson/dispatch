@@ -27,6 +27,8 @@ export interface NewPost {
   text: string;
   /** A specific time, or null to use the channel's next free queue slot. */
   dueAt: string | null;
+  /** True to publish straight away. Then `dueAt` must be null. */
+  publishNow: boolean;
 }
 
 /** One platform column in the landscape layout. */

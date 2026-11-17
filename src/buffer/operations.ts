@@ -43,9 +43,11 @@ export function postsQuery(
 }
 
 export function createPostMutation(post: NewPost): string {
-  const scheduling = post.dueAt
-    ? `mode: customScheduled, dueAt: ${gqlString(post.dueAt)}`
-    : 'mode: addToQueue';
+  const scheduling = post.publishNow
+    ? 'mode: shareNow'
+    : post.dueAt
+      ? `mode: customScheduled, dueAt: ${gqlString(post.dueAt)}`
+      : 'mode: addToQueue';
   return `mutation {
   createPost(input: { text: ${gqlString(post.text)}, channelId: ${gqlString(post.channelId)}, schedulingType: automatic, ${scheduling} }) {
     ... on PostActionSuccess {

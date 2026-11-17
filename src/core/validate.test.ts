@@ -7,7 +7,7 @@ describe('validateNewPost', () => {
   it('accepts a queued post and trims the channel id', () => {
     expect(validateNewPost({ channelId: ' bsky ', text: 'Hello', dueAt: null })).toEqual({
       ok: true,
-      value: { channelId: 'bsky', text: 'Hello', dueAt: null },
+      value: { channelId: 'bsky', text: 'Hello', dueAt: null, publishNow: false },
     });
   });
 
@@ -15,7 +15,12 @@ describe('validateNewPost', () => {
     const result = validateNewPost({ channelId: 'bsky', text: 'Hi', dueAt: future });
     expect(result).toEqual({
       ok: true,
-      value: { channelId: 'bsky', text: 'Hi', dueAt: new Date(future).toISOString() },
+      value: {
+        channelId: 'bsky',
+        text: 'Hi',
+        dueAt: new Date(future).toISOString(),
+        publishNow: false,
+      },
     });
   });
 
@@ -37,6 +42,21 @@ describe('validateNewPost', () => {
   });
 });
 
+describe('validateNewPost with publish now', () => {
+  it('accepts a post to publish straight away, with no time', () => {
+    expect(validateNewPost({ channelId: 'bsky', text: 'Now', publishNow: true })).toEqual({
+      ok: true,
+      value: { channelId: 'bsky', text: 'Now', dueAt: null, publishNow: true },
+    });
+  });
+
+  it('rejects a publish-now post that also names a time', () => {
+    expect(
+      validateNewPost({ channelId: 'bsky', text: 'Now', dueAt: future, publishNow: true }),
+    ).toEqual({ ok: false, error: 'Publish now cannot also have a time.' });
+  });
+});
+
 describe('validatePostDraft', () => {
   it('splits a draft into one post per channel, dropping duplicates and blanks', () => {
     expect(
@@ -44,8 +64,8 @@ describe('validatePostDraft', () => {
     ).toEqual({
       ok: true,
       value: [
-        { channelId: 'bsky', text: 'Hi', dueAt: null },
-        { channelId: 'masto', text: 'Hi', dueAt: null },
+        { channelId: 'bsky', text: 'Hi', dueAt: null, publishNow: false },
+        { channelId: 'masto', text: 'Hi', dueAt: null, publishNow: false },
       ],
     });
   });
@@ -63,6 +83,18 @@ describe('validatePostDraft', () => {
     expect(validatePostDraft({ channelIds: [], text: 'Hi', dueAt: null })).toEqual(error);
     expect(validatePostDraft({ channelIds: ['  '], text: 'Hi', dueAt: null })).toEqual(error);
     expect(validatePostDraft({ channelIds: 'bsky', text: 'Hi', dueAt: null })).toEqual(error);
+  });
+
+  it('publishes every channel of a publish-now draft straight away', () => {
+    expect(
+      validatePostDraft({ channelIds: ['a', 'b'], text: 'Hi', dueAt: null, publishNow: true }),
+    ).toEqual({
+      ok: true,
+      value: [
+        { channelId: 'a', text: 'Hi', dueAt: null, publishNow: true },
+        { channelId: 'b', text: 'Hi', dueAt: null, publishNow: true },
+      ],
+    });
   });
 
   it('passes on the first problem with the post itself', () => {
